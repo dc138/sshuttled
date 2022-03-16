@@ -1,4 +1,5 @@
 #include "log.h"
+#include "daemon.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,21 +10,20 @@
 #include <signal.h>
 #include <getopt.h>
 #include <string.h>
-#include <fcntl.h>
-#include <sys/stat.h>
 #include <sys/types.h>
 #include <errno.h>
 
-static int   running       = 0;
-static int   delay         = 1;
-static int   counter       = 0;
-static char *pid_file_name = "pid.pid";
-static int   pid_fd        = -1;
-static char *app_name      = NULL;
+static int   running  = 0;
+static int   delay    = 1;
+static int   counter  = 0;
+static char *app_name = NULL;
+
+char *pid_file_name = "pid.pid";
+int   pid_fd        = -1;
 
 void handle_signal(int sig) {
   if (sig == SIGINT || sig == SIGTERM) {
-    log_message(LOG_DEBUG, "Received termination signal\n");
+    log_message(LOG_INFO, "Received termination signal\n");
 
     if (pid_fd != -1) {
       lockf(pid_fd, F_ULOCK, 0);
@@ -39,65 +39,6 @@ void handle_signal(int sig) {
 
   } else if (sig == SIGCHLD) {
     log_message(LOG_DEBUG, "Received SIGCHLD signal\n");
-  }
-}
-
-static void daemonize() {
-  pid_t pid = 0;
-  int   fd;
-
-  pid = fork();
-
-  if (pid < 0) {
-    exit(EXIT_FAILURE);
-  }
-
-  if (pid > 0) {
-    exit(EXIT_SUCCESS);
-  }
-
-  if (setsid() < 0) {
-    exit(EXIT_FAILURE);
-  }
-
-  signal(SIGCHLD, SIG_IGN);
-
-  pid = fork();
-
-  if (pid < 0) {
-    exit(EXIT_FAILURE);
-  }
-
-  if (pid > 0) {
-    exit(EXIT_SUCCESS);
-  }
-
-  umask(0);
-
-  // chdir("/");
-
-  for (fd = sysconf(_SC_OPEN_MAX); fd > 0; fd--) {
-    close(fd);
-  }
-
-  stdin  = fopen("/dev/null", "r");
-  stdout = fopen("/dev/null", "w+");
-  stderr = fopen("/dev/null", "w+");
-
-  if (pid_file_name != NULL) {
-    char str[256];
-    pid_fd = open(pid_file_name, O_RDWR | O_CREAT, 0640);
-
-    if (pid_fd < 0) {
-      exit(EXIT_FAILURE);
-    }
-
-    if (lockf(pid_fd, F_TLOCK, 0) < 0) {
-      exit(EXIT_FAILURE);
-    }
-
-    sprintf(str, "%d\n", getpid());
-    write(pid_fd, str, strlen(str));
   }
 }
 
