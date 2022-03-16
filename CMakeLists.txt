@@ -1,60 +1,44 @@
-# Minimal version of CMake
-cmake_minimum_required (VERSION 3.21)
+cmake_minimum_required(VERSION 3.21)
 
-# Build type
-if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
-    message(STATUS "Setting build type to 'Release' as none was specified.")
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  message(STATUS "Setting build type to 'Release' as none was specified.")
   set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
-  # Set the possible values of build type for cmake-gui
-  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release"
-    "MinSizeRel" "RelWithDebInfo")
-endif ()
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
+endif()
 
-# Define project name
-project (shhuttled)
+project(shhuttled)
 
-# The version number
-set (${PROJECT_NAME}_VERSION_MAJOR 0)
-set (${PROJECT_NAME}_VERSION_MINOR 1)
-set (${PROJECT_NAME}_PATCH_LEVEL 0)
+set(${PROJECT_NAME}_VERSION_MAJOR 0)
+set(${PROJECT_NAME}_VERSION_MINOR 1)
+set(${PROJECT_NAME}_PATCH_LEVEL 0)
 
-set (${PROJECT_NAME}_VERSION
-  "${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}")
+set(${PROJECT_NAME}_VERSION "${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}")
 
-# Set up directory with 3rd party cmake modules
-set (CMAKE_MODULE_PATH
-  ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/build_files/cmake/modules/")
+set(SSHUTTLED_CONF_DIR "/etc/sshuttled")
+set(SYSTEMD_UNIT_DIR "/usr/lib/systemd/system/")
 
-# Set output directory for binaries
-set (EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin/)
-
-# Set up required subdirectories
 file(GLOB_RECURSE sshuttled_src
   "src/*.c"
 )
 
-add_executable (sshuttled ${sshuttled_src})
+add_executable(sshuttled ${sshuttled_src})
+set_property(TARGET sshuttled PROPERTY C_STANDARD 11)
 
-# Make build flags compiler specific
-if (CMAKE_COMPILER_IS_GNUCC)
+set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin/)
+target_include_directories(sshuttled PRIVATE include/)
+
+if(CMAKE_COMPILER_IS_GNUCC)
   if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     set (CMAKE_C_FLAGS "-D_REETRANT -ggdb -fPIC -Wall -Wextra -pedantic -O0")
-  elseif( CMAKE_BUILD_TYPE STREQUAL "Release" )
-    set (CMAKE_C_FLAGS "-D_REETRANT -DNDEBUG -fPIC -Wall -Wextra -pedantic -O3")
+  elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
+    set (CMAKE_C_FLAGS "-D_REETRANT -DNDEBUG -fPIC -Wall -Wextra -pedantic -O3 -flto")
   endif ()
-endif (CMAKE_COMPILER_IS_GNUCC)
+endif(CMAKE_COMPILER_IS_GNUCC)
 
-install (TARGETS sshuttled
+install(TARGETS sshuttled
   RUNTIME
   DESTINATION bin)
 
-# Directory with configuration files
-set (SSHUTTLED_CONF_DIR "/etc/sshuttled")
-
-# Directory with systemd unit files
-set (SYSTEMD_UNIT_DIR "/usr/lib/systemd/system/")
-
-# Macro for installing configuration files
 function(install_conf src dest)
   if(NOT IS_ABSOLUTE "${src}")
     set(src "${CMAKE_CURRENT_SOURCE_DIR}/${src}")
@@ -83,9 +67,6 @@ function(install_conf src dest)
   ")
 endfunction(install_conf)
 
-# Install configuration file
-install_conf (./sshutled.conf ${SSHUTTLED_CONF_DIR})
-
-# Install systemd unit files
-install_conf (./shuttled.service ${SYSTEMD_UNIT_DIR})
+install_conf(./config/sshutled.json ${SSHUTTLED_CONF_DIR})
+install_conf(./systemd/sshuttle.service ${SYSTEMD_UNIT_DIR})
 

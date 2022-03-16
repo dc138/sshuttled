@@ -1,5 +1,9 @@
+#include "log.h"
+
 #include <stdio.h>
 #include <stdlib.h>
+#include <stddef.h>
+#include <stdbool.h>
 #include <unistd.h>
 #include <syslog.h>
 #include <signal.h>
@@ -16,11 +20,10 @@ static int   counter       = 0;
 static char *pid_file_name = "pid.pid";
 static int   pid_fd        = -1;
 static char *app_name      = NULL;
-static FILE *log_stream;
 
 void handle_signal(int sig) {
   if (sig == SIGINT || sig == SIGTERM) {
-    fprintf(log_stream, "Debug: stopping daemon ...\n");
+    log_message(LOG_DEBUG, "Received termination signal\n");
 
     if (pid_fd != -1) {
       lockf(pid_fd, F_ULOCK, 0);
@@ -35,7 +38,7 @@ void handle_signal(int sig) {
     signal(sig, SIG_DFL);
 
   } else if (sig == SIGCHLD) {
-    fprintf(log_stream, "Debug: received SIGCHLD signal\n");
+    log_message(LOG_DEBUG, "Received SIGCHLD signal\n");
   }
 }
 
@@ -98,9 +101,6 @@ static void daemonize() {
   }
 }
 
-/**
- * \brief Print help for this application
- */
 void print_help(void) {
   printf("\n Usage: %s [OPTIONS]\n\n", app_name);
   printf("  Options:\n");
@@ -109,21 +109,20 @@ void print_help(void) {
   printf("\n");
 }
 
-/* Main function */
 int main(int argc, char *argv[]) {
   static struct option long_options[] = {
       {"help", no_argument, 0, 'h'}, {"no-daemon", no_argument, 0, 'n'}, {NULL, 0, 0, 0}};
 
-  int   value, option_index = 0, ret;
+  int   value, option_index = 0;
   char *log_file_name    = "log.log";
-  int   start_daemonized = 1;
+  bool  start_daemonized = true;
 
   app_name = argv[0];
 
   while ((value = getopt_long(argc, argv, "hn", long_options, &option_index)) != -1) {
     switch (value) {
       case 'n':
-        start_daemonized = 0;
+        start_daemonized = false;
         break;
 
       case 'h':
@@ -139,66 +138,26 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  if (!!start_daemonized) {
+  if (start_daemonized) {
     printf("Forking to background...\n");
     daemonize();
   }
 
-  openlog(argv[0], LOG_PID | LOG_CONS, LOG_DAEMON);
-  syslog(LOG_INFO, "Started %s", app_name);
+  log_open(app_name, start_daemonized == true ? log_file_name : NULL);
 
   signal(SIGINT, handle_signal);
   signal(SIGTERM, handle_signal);
 
-  if (log_file_name != NULL) {
-    log_stream = fopen(log_file_name, "a+");
-
-    if (log_stream == NULL) {
-      syslog(LOG_ERR, "Can not open log file: %s, error: %s", log_file_name, strerror(errno));
-      log_stream = stdout;
-    }
-  } else {
-    log_stream = stdout;
-  }
-
   running = 1;
 
   while (running == 1) {
-    ret = fprintf(log_stream, "Debug: %d\n", counter++);
+    log_message(LOG_DEBUG, "%d\n", counter++);
+    log_flush();
 
-    if (ret < 0) {
-      syslog(LOG_ERR,
-             "Can not write to log stream: %s, error: %s",
-             (log_stream == stdout) ? "stdout" : log_file_name,
-             strerror(errno));
-      break;
-    }
-
-    ret = fflush(log_stream);
-
-    if (ret != 0) {
-      syslog(LOG_ERR,
-             "Can not fflush() log stream: %s, error: %s",
-             (log_stream == stdout) ? "stdout" : log_file_name,
-             strerror(errno));
-
-      break;
-    }
-
-    /* TODO: dome something useful here */
-
-    /* Real server should use select() or poll() for waiting at
-     * asynchronous event. Note: sleep() is interrupted, when
-     * signal is received. */
     sleep(delay);
   }
 
-  if (log_stream != stdout) {
-    fclose(log_stream);
-  }
-
-  syslog(LOG_INFO, "Stopped %s", app_name);
-  closelog();
+  log_close();
 
   return EXIT_SUCCESS;
 }
