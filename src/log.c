@@ -1,18 +1,17 @@
 #include "log.h"
 
 #include <errno.h>
+#include <stdlib.h>
 #include <string.h>
-#include <syslog.h>
 #include <stdio.h>
 #include <assert.h>
 #include <stdarg.h>
-#include <stdbool.h>
 
-static const char* log_identifier = "";
-static const char* log_filename   = "";
-static FILE*       log_stream     = NULL;
-static bool        is_log_open    = false;
+const char* log_identifier = "";
+const char* log_filename   = "";
+bool        is_log_open    = false;
 
+static FILE*       log_stream = NULL;
 static const char* log_priority_readable[8] =
     {"EMERGENCY", "ALERT", "CRITICAL", "ERROR", "WARNING", "NOTICE", "INFO", "DEBUG"};
 
@@ -71,7 +70,7 @@ void log_flush() {
 
 void log_message(int priority, const char* fmt, ...) {
   assert(is_log_open == true && "Log must be open");
-  assert(priority < 8 && "Invalid priority value");
+  assert(priority >= 0 && priority < 8 && "Invalid priority value");
 
   va_list args;
 
@@ -86,4 +85,8 @@ void log_message(int priority, const char* fmt, ...) {
   va_start(args, fmt);  // Must call va_start once again because the call to vfprintf "consumes" the pointer
   vsyslog(priority, fmt, args);
   va_end(args);
+
+  if (priority < LOG_WARNING) {
+    exit(EXIT_FAILURE);
+  }
 }

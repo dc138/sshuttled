@@ -1,41 +1,27 @@
 #include "log.h"
 #include "daemon.h"
+#include "pid.h"
 
+#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stddef.h>
-#include <stdbool.h>
-#include <unistd.h>
-#include <syslog.h>
 #include <signal.h>
 #include <getopt.h>
-#include <string.h>
-#include <sys/types.h>
-#include <errno.h>
 
-static int   running  = 0;
-static int   delay    = 1;
-static int   counter  = 0;
+static int running = 0;
+static int delay   = 1;
+static int counter = 0;
+
 static char *app_name = NULL;
-
-char *pid_file_name = "pid.pid";
-int   pid_fd        = -1;
 
 void handle_signal(int sig) {
   if (sig == SIGINT || sig == SIGTERM) {
     log_message(LOG_INFO, "Received termination signal\n");
 
-    if (pid_fd != -1) {
-      lockf(pid_fd, F_ULOCK, 0);
-      close(pid_fd);
-    }
-
-    if (pid_file_name != NULL) {
-      unlink(pid_file_name);
-    }
-
     running = 0;
     signal(sig, SIG_DFL);
+
+    pid_delete();
 
   } else if (sig == SIGCHLD) {
     log_message(LOG_DEBUG, "Received SIGCHLD signal\n");
@@ -54,9 +40,8 @@ int main(int argc, char *argv[]) {
   static struct option long_options[] = {
       {"help", no_argument, 0, 'h'}, {"no-daemon", no_argument, 0, 'n'}, {NULL, 0, 0, 0}};
 
-  int   value, option_index = 0;
-  char *log_file_name    = "log.log";
-  bool  start_daemonized = true;
+  int  value, option_index = 0;
+  bool start_daemonized = true;
 
   app_name = argv[0];
 
@@ -82,9 +67,11 @@ int main(int argc, char *argv[]) {
   if (start_daemonized) {
     printf("Forking to background...\n");
     daemonize();
+    pid_create("pid.pid");
   }
 
-  log_open(app_name, start_daemonized == true ? log_file_name : NULL);
+  log_open(app_name,
+           start_daemonized == true ? "log.log" : NULL);  // When not running as daemon, write logs to stdout
 
   signal(SIGINT, handle_signal);
   signal(SIGTERM, handle_signal);
