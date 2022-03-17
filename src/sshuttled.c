@@ -16,7 +16,7 @@ static char *app_name = NULL;
 
 void handle_signal(int sig) {
   if (sig == SIGINT || sig == SIGTERM) {
-    log_message(LOG_INFO, "Received termination signal\n");
+    log_message(LOG_INFO, "Received termination signal");
 
     running = 0;
     signal(sig, SIG_DFL);
@@ -24,7 +24,7 @@ void handle_signal(int sig) {
     pid_delete();
 
   } else if (sig == SIGCHLD) {
-    log_message(LOG_DEBUG, "Received SIGCHLD signal\n");
+    log_message(LOG_DEBUG, "Received SIGCHLD signal");
   }
 }
 
@@ -64,8 +64,14 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  if (geteuid() != 0) {
+    printf("Must be root to run\n");
+    return EXIT_FAILURE;
+  }
+
   if (start_daemonized) {
     printf("Forking to background...\n");
+
     daemonize();
     pid_create("pid.pid");
   }
@@ -79,7 +85,7 @@ int main(int argc, char *argv[]) {
   running = 1;
 
   while (running == 1) {
-    log_message(LOG_DEBUG, "%d\n", counter++);
+    log_message(LOG_DEBUG, "%d", counter++);
     log_flush();
 
     sleep(delay);
