@@ -50,15 +50,20 @@ void log_open(const char* identifier, const char* filename) {
 void log_close() {
   assert(is_log_open == true && "Log must be open");
 
-  log_message(LOG_INFO, "Closing %s", log_filename);
+  // The order of operations is a bit weird, but we cannot close the
+  // log file before finishing writting messages, so we "cheat" and
+  // send this message before
+
+  if (log_stream != NULL && log_stream != stdout) {
+    log_message(LOG_INFO, "Closing %s", log_filename);
+  }
+
+  log_message(LOG_INFO, "Stopped %s", log_identifier);
   log_flush();
 
   if (log_stream != NULL && log_stream != stdout) {
     fclose(log_stream);
-    syslog(LOG_INFO, "Closed %s", log_filename);
   }
-
-  log_message(LOG_INFO, "Stopped %s", log_identifier);
 
   closelog();
   is_log_open = false;
