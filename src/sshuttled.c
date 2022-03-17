@@ -1,18 +1,28 @@
 #include "log.h"
 #include "daemon.h"
 #include "pid.h"
+#include "dirs.h"
 
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
 #include <getopt.h>
+#include <string.h>
 
-static int running = 0;
-static int delay   = 1;
-static int counter = 0;
+int running = 0;
+int delay   = 1;
+int counter = 0;
 
-static char *app_name = NULL;
+const char* app_name = NULL;
+
+const char* var_run_dir = "/var/run/sshuttled/";
+const char* var_log_dir = "/var/log/sshuttled/";
+
+const char* log_basename = "log.log";
+const char* pid_basename = "pid.pid";
+
+char char_buffer[1024] = {0};
 
 void handle_signal(int sig) {
   if (sig == SIGINT || sig == SIGTERM) {
@@ -36,7 +46,7 @@ void print_help(void) {
   printf("\n");
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   static struct option long_options[] = {
       {"help", no_argument, 0, 'h'}, {"no-daemon", no_argument, 0, 'n'}, {NULL, 0, 0, 0}};
 
@@ -69,15 +79,24 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
+  log_open_syslog(app_name);
+
+  dirs_create(var_log_dir, 0777);
+  dirs_create(var_run_dir, 0777);
+
   if (start_daemonized) {
     printf("Forking to background...\n");
 
     daemonize();
-    pid_create("pid.pid");
+
+    strcpy(char_buffer, var_run_dir);
+    strcat(char_buffer, pid_basename);
+    pid_create(char_buffer);
   }
 
-  log_open(app_name,
-           start_daemonized == true ? "log.log" : NULL);  // When not running as daemon, write logs to stdout
+  strcpy(char_buffer, var_log_dir);
+  strcat(char_buffer, log_basename);
+  log_open_logfile(start_daemonized ? char_buffer : NULL);
 
   signal(SIGINT, handle_signal);
   signal(SIGTERM, handle_signal);
@@ -91,7 +110,8 @@ int main(int argc, char *argv[]) {
     sleep(delay);
   }
 
-  log_close();
+  log_close_logfile();
+  log_close_syslog();
 
   return EXIT_SUCCESS;
 }
