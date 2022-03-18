@@ -19,10 +19,8 @@ const char* app_name = NULL;
 const char* var_run_dir = "/var/run/sshuttled/";
 const char* var_log_dir = "/var/log/sshuttled/";
 
-const char* log_basename = "log.log";
-const char* pid_basename = "pid.pid";
-
-char char_buffer[1024] = {0};
+const char* log_path = "/var/log/sshuttled/log.log";
+const char* pid_path = "/var/run/sshuttled/pid.pid";
 
 void handle_signal(int sig) {
   if (sig == SIGINT || sig == SIGTERM) {
@@ -88,15 +86,10 @@ int main(int argc, char* argv[]) {
     printf("Forking to background...\n");
 
     daemonize();
-
-    strcpy(char_buffer, var_run_dir);
-    strcat(char_buffer, pid_basename);
-    pid_create(char_buffer);
+    pid_create(pid_path);
   }
 
-  strcpy(char_buffer, var_log_dir);
-  strcat(char_buffer, log_basename);
-  log_open_logfile(start_daemonized ? char_buffer : NULL);
+  log_open_logfile(start_daemonized ? log_path : NULL);
 
   signal(SIGINT, handle_signal);
   signal(SIGTERM, handle_signal);
