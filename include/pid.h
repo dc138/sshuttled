@@ -9,4 +9,6 @@ extern bool        is_pid_created;
 void pid_create(const char* filename);
 void pid_delete();
 
+bool pid_is_program_open(const char* filename);
+
 #endif

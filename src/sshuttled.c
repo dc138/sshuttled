@@ -77,6 +77,11 @@ int main(int argc, char* argv[]) {
     return EXIT_FAILURE;
   }
 
+  if (pid_is_program_open(pid_path)) {
+    printf("Sshuttled is already running\n");
+    return EXIT_FAILURE;
+  }
+
   log_open_syslog(app_name);
 
   dirs_create(var_log_dir, 0777);

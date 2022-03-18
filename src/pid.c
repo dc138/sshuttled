@@ -5,6 +5,8 @@
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <errno.h>
+#include <dirent.h>
 
 const char* pid_filename   = "";
 bool        is_pid_created = false;
@@ -44,4 +46,34 @@ void pid_delete() {
   }
 
   is_pid_created = false;
+}
+
+bool pid_is_program_open(const char* filename) {
+  FILE* pid_file = fopen(filename, "r");
+
+  if (pid_file == NULL) {
+    return false;
+  }
+
+  char pid_string[32];
+  fgets(pid_string, 32, pid_file);
+  fclose(pid_file);
+
+  if (pid_string[strlen(pid_string) - 1] == '\n') {
+    pid_string[strlen(pid_string) - 1] = 0;
+  }
+
+  const char* proc_fmt = "/proc/%s/";
+  char        proc_folder[512];
+
+  sprintf(proc_folder, proc_fmt, pid_string);
+
+  DIR* proc_dir = opendir(proc_folder);
+
+  if (errno == ENOENT) {
+    return false;
+  }
+
+  closedir(proc_dir);
+  return true;
 }
