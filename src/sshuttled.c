@@ -14,7 +14,8 @@
 bool running = true;
 int  counter = 0;
 
-const char* app_name = NULL;
+const char* app_name    = NULL;
+const char* app_version = "0.1.0";
 
 static fifo_t fifo_in;
 static fifo_t fifo_out;
@@ -28,6 +29,7 @@ void print_help(void) {
 }
 
 void terminate(int code) {
+  log_message(LOG_INFO, "Exiting sshuttled");
   pid_delete();
 
   fifo_delete(&fifo_in);
@@ -92,6 +94,7 @@ int main(int argc, char* argv[]) {
   }
 
   log_open_syslog(app_name);
+  log_message(LOG_INFO, "Starting sshuttle daemon version %s", app_version);
 
   dirs_create("/var/run/sshuttled", 0777);
   dirs_create("/var/log/sshuttled", 0777);

@@ -40,12 +40,10 @@ void log_open_logfile(const char* filename) {
       log_filename = "(stdout)";
       log_stream   = stdout;
 
-      log_message(LOG_INFO, "Started %s", log_identifier);
       log_message(
           LOG_WARNING, "Can not open log file %s, falling back to stdout, error: %s", filename, strerror(errno));
 
     } else {
-      log_message(LOG_INFO, "Started %s", log_identifier);
       log_message(LOG_INFO, "Opened %s as log file", filename);
     }
 
@@ -53,8 +51,7 @@ void log_open_logfile(const char* filename) {
     log_filename = "(stdout)";
     log_stream   = stdout;
 
-    log_message(LOG_INFO, "Started %s", log_identifier);
-    log_message(LOG_INFO, "No filename specified, using stdout");
+    log_message(LOG_INFO, "No logfile specified, using (stdout) as log stream");
   }
 }
 
@@ -69,13 +66,7 @@ void log_close_logfile() {
   if (is_logfile_open && log_stream != NULL && log_stream != stdout) {
     log_message(LOG_INFO, "Closing %s", log_filename);
     log_flush();
-
-    log_message(LOG_INFO, "Stopped %s", log_identifier);
-
     fclose(log_stream);
-
-  } else {
-    log_message(LOG_INFO, "Stopped %s", log_identifier);
   }
 
   is_logfile_open = false;
@@ -94,16 +85,21 @@ void log_message(int priority, const char* fmt, ...) {
   va_list args;
 
   if (is_logfile_open && log_stream != NULL) {
-    time_t     time_now    = time(0);
-    struct tm* time_struct = localtime(&time_now);
+    if (strcmp(log_filename, "(stdout)") == 0) {
+      fprintf(log_stream, "[%s] ", log_priority_readable[priority]);
 
-    char date_string[32];
-    char time_string[32];
+    } else {
+      time_t     time_now    = time(0);
+      struct tm* time_struct = localtime(&time_now);
 
-    strftime(date_string, 32, "%Y-%m-%d", time_struct);
-    strftime(time_string, 32, "%H:%M:%S", time_struct);
+      char date_string[32];
+      char time_string[32];
 
-    fprintf(log_stream, "[%s] [%s] [%s] ", date_string, time_string, log_priority_readable[priority]);
+      strftime(date_string, 32, "%Y-%m-%d", time_struct);
+      strftime(time_string, 32, "%H:%M:%S", time_struct);
+
+      fprintf(log_stream, "[%s] [%s] [%s] ", date_string, time_string, log_priority_readable[priority]);
+    }
 
     va_start(args, fmt);
     vfprintf(log_stream, fmt, args);
