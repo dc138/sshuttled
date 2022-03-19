@@ -3,13 +3,15 @@
 
 #include <stdbool.h>
 
-extern const char* fifo_filename;
-extern bool        is_fifo_created;
+typedef struct {
+  const char* filepath;
+  bool        open;
+} fifo_t;
 
-void fifo_create(const char* filepath);
-void fifo_delete();
+void fifo_create(fifo_t* fifo, const char* filepath);
+void fifo_delete(fifo_t* fifo);
 
-bool fifo_read(void* buffer, int bytes);
-void fifo_write(const char* text);
+bool fifo_read(fifo_t* fifo, void* buffer, int bytes);
+void fifo_write(fifo_t* fifo, const char* text);
 
 #endif

@@ -11,39 +11,38 @@
 #include <unistd.h>
 #include <assert.h>
 
-const char* fifo_filename   = "";
-bool        is_fifo_created = false;
+void fifo_create(fifo_t* fifo, const char* filepath) {
+  assert(!fifo->open && "Fifo must not be open");
+  fifo->filepath = filepath;
 
-void fifo_create(const char* filepath) {
-  fifo_filename = filepath;
-
-  if (mkfifo(filepath, 0666) == -1 && errno != EEXIST) {
-    log_message(LOG_ERR, "Error while trying to create fifo %s, %s", filepath, strerror(errno));
+  if (mkfifo(fifo->filepath, 0666) == -1 && errno != EEXIST) {
+    log_message(LOG_ERR, "Error while trying to create fifo %s, %s", fifo->filepath, strerror(errno));
   }
 
-  log_message(LOG_INFO, "Created fifo %s", fifo_filename);
-  is_fifo_created = true;
+  log_message(LOG_INFO, "Created fifo %s", fifo->filepath);
+
+  fifo->open = true;
 }
 
-void fifo_delete() {
-  assert(is_fifo_created && "Fifo file must be created");
+void fifo_delete(fifo_t* fifo) {
+  assert(fifo->open && "Fifo must be open");
 
-  if (remove(fifo_filename) == -1) {
-    log_message(LOG_ERR, "Error while trying to delete fifo %s, %s", fifo_filename, strerror(errno));
+  if (remove(fifo->filepath) == -1) {
+    log_message(LOG_ERR, "Error while trying to delete fifo %s, %s", fifo->filepath, strerror(errno));
   }
 
-  log_message(LOG_INFO, "Deleted fifo %s", fifo_filename);
-  fifo_filename   = "";
-  is_fifo_created = false;
+  log_message(LOG_INFO, "Deleted fifo %s", fifo->filepath);
+
+  fifo->open     = false;
+  fifo->filepath = NULL;
 }
 
-bool fifo_read(void* buffer, int bytes) {
-  assert(is_fifo_created && "Fifo file must be created");
-
-  int fd = open(fifo_filename, O_RDONLY);
+bool fifo_read(fifo_t* fifo, void* buffer, int bytes) {
+  assert(fifo->open && "Fifo must be open");
+  int fd = open(fifo->filepath, O_RDONLY);
 
   if (fd < 0) {
-    log_message(LOG_ERR, "Cannot open fifo %s for reading", fifo_filename);
+    log_message(LOG_ERR, "Cannot open fifo %s for reading", fifo->filepath);
   }
 
   int res = read(fd, buffer, bytes);
@@ -52,13 +51,12 @@ bool fifo_read(void* buffer, int bytes) {
   return res == 0 ? false : true;
 }
 
-void fifo_write(const char* text) {
-  assert(is_fifo_created && "Fifo file must be created");
-
-  int fd = open(fifo_filename, O_WRONLY);
+void fifo_write(fifo_t* fifo, const char* text) {
+  assert(fifo->open && "Fifo must be open");
+  int fd = open(fifo->filepath, O_WRONLY);
 
   if (fd < 0) {
-    log_message(LOG_ERR, "Cannot open fifo %s for writing", fifo_filename);
+    log_message(LOG_ERR, "Cannot open fifo %s for writing", fifo->filepath);
   }
 
   write(fd, text, sizeof(text));

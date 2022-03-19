@@ -16,12 +16,8 @@ int  counter = 0;
 
 const char* app_name = NULL;
 
-const char* var_run_dir = "/var/run/sshuttled/";
-const char* var_log_dir = "/var/log/sshuttled/";
-
-const char* log_path  = "/var/log/sshuttled/log.log";
-const char* pid_path  = "/var/run/sshuttled/pid.pid";
-const char* fifo_path = "/var/run/sshuttled/fifo";
+static fifo_t fifo_in;
+static fifo_t fifo_out;
 
 void print_help(void) {
   printf("\n Usage: %s [OPTIONS]\n\n", app_name);
@@ -33,7 +29,9 @@ void print_help(void) {
 
 void terminate(int code) {
   pid_delete();
-  fifo_delete();
+
+  fifo_delete(&fifo_in);
+  fifo_delete(&fifo_out);
 
   log_close_logfile();
   log_close_syslog();
@@ -88,25 +86,27 @@ int main(int argc, char* argv[]) {
     return EXIT_FAILURE;
   }
 
-  if (pid_is_program_open(pid_path)) {
+  if (pid_is_program_open("/var/run/sshuttled/pid")) {
     printf("sshuttled is already running\n");
     return EXIT_FAILURE;
   }
 
   log_open_syslog(app_name);
 
-  dirs_create(var_log_dir, 0777);
-  dirs_create(var_run_dir, 0777);
+  dirs_create("/var/run/sshuttled", 0777);
+  dirs_create("/var/log/sshuttled", 0777);
 
   if (start_daemonized) {
     printf("Forking to background...\n");
 
     daemonize();
-    pid_create(pid_path);
+    pid_create("/var/run/sshuttled/pid");
   }
 
-  log_open_logfile(start_daemonized ? log_path : NULL);
-  fifo_create(fifo_path);
+  log_open_logfile(start_daemonized ? "/var/log/sshuttled/log.txt" : NULL);
+
+  fifo_create(&fifo_in, "/var/run/sshuttled/in");
+  fifo_create(&fifo_out, "/var/run/sshuttled/out");
 
   signal(SIGINT, handle_signal);
   signal(SIGTERM, handle_signal);
@@ -115,7 +115,7 @@ int main(int argc, char* argv[]) {
   char command[512] = {0};
 
   while (running) {
-    if (fifo_read((char*)command, 512)) {
+    if (fifo_read(&fifo_in, (char*)command, 512)) {
       log_message(LOG_DEBUG, "Read %s from fifo", command);
     }
 
