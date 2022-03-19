@@ -8,6 +8,8 @@ endif()
 
 project(shhuttled)
 
+set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin/)
+
 set(${PROJECT_NAME}_VERSION_MAJOR 0)
 set(${PROJECT_NAME}_VERSION_MINOR 1)
 set(${PROJECT_NAME}_PATCH_LEVEL 0)
@@ -18,14 +20,38 @@ set(SSHUTTLED_CONF_DIR "/etc/sshuttled")
 set(SYSTEMD_UNIT_DIR "/usr/lib/systemd/system/")
 
 file(GLOB_RECURSE sshuttled_src
-  "src/*.c"
+  "src/sshuttled.c"
+  "src/daemonize.c"
+  "src/log.c"
+  "src/pid.c"
+  "src/dirs.c"
+  "src/fifo.c"
 )
 
 add_executable(sshuttled ${sshuttled_src})
 set_property(TARGET sshuttled PROPERTY C_STANDARD 11)
-
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin/)
 target_include_directories(sshuttled PRIVATE include/)
+
+install(TARGETS sshuttled
+  RUNTIME
+  DESTINATION bin)
+
+file(GLOB_RECURSE sshuttlectl_src
+  "src/sshuttlectl.c"
+  "src/daemonize.c"
+  "src/log.c"
+  "src/pid.c"
+  "src/dirs.c"
+  "src/fifo.c"
+)
+
+add_executable(sshuttlectl ${sshuttlectl_src})
+set_property(TARGET sshuttlectl PROPERTY C_STANDARD 11)
+target_include_directories(sshuttlectl PRIVATE include/)
+
+install(TARGETS sshuttlectl
+  RUNTIME
+  DESTINATION bin)
 
 if(CMAKE_COMPILER_IS_GNUCC)
   if (CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -34,10 +60,6 @@ if(CMAKE_COMPILER_IS_GNUCC)
     set (CMAKE_C_FLAGS "-D_REETRANT -DNDEBUG -fPIC -Wall -Wextra -pedantic -O3 -flto")
   endif ()
 endif(CMAKE_COMPILER_IS_GNUCC)
-
-install(TARGETS sshuttled
-  RUNTIME
-  DESTINATION bin)
 
 function(install_conf src dest)
   if(NOT IS_ABSOLUTE "${src}")
