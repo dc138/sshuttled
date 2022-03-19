@@ -7,7 +7,25 @@
 
 static fifo_t server_fifo;
 
-int main() {
+const char* app_name    = NULL;
+const char* app_version = "0.1.0";
+
+void print_help() {
+  printf("\n Usage: %s [COMMAND...]\n\n", app_name);
+  printf("  Available commands:\n");
+  printf("    start [CONNECTION] - start a connection\n");
+  printf("    stop [CONNECTION] - stop a connection\n");
+  printf("\n");
+}
+
+int main(int argc, char* argv[]) {
+  app_name = argv[0];
+
+  if (argc < 2) {
+    print_help();
+    exit(EXIT_FAILURE);
+  }
+
   log_open_logfile(NULL);
 
   if (!pid_is_program_open("/var/run/sshuttled/pid")) {

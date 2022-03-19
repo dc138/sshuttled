@@ -106,6 +106,7 @@ int main(int argc, char* argv[]) {
     pid_create("/var/run/sshuttled/pid");
   }
 
+  chroot("/var/run/sshuttled");
   log_open_logfile(start_daemonized ? "/var/log/sshuttled/log.txt" : NULL);
 
   fifo_create(&fifo_in, "/var/run/sshuttled/in");
