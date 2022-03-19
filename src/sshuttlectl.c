@@ -16,8 +16,6 @@ int main() {
     return EXIT_FAILURE;
   }
 
-  fifo_delete(&server_fifo);
   log_close_logfile();
-
   return EXIT_SUCCESS;
 }

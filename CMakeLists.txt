@@ -19,8 +19,7 @@ set(${PROJECT_NAME}_VERSION "${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_
 set(SSHUTTLED_CONF_DIR "/etc/sshuttled")
 set(SYSTEMD_UNIT_DIR "/usr/lib/systemd/system/")
 
-file(GLOB_RECURSE sshuttled_src
-  "src/sshuttled.c"
+file(GLOB_RECURSE common_src
   "src/daemonize.c"
   "src/log.c"
   "src/pid.c"
@@ -28,7 +27,11 @@ file(GLOB_RECURSE sshuttled_src
   "src/fifo.c"
 )
 
-add_executable(sshuttled ${sshuttled_src})
+file(GLOB_RECURSE sshuttled_src
+  "src/sshuttled.c"
+)
+
+add_executable(sshuttled ${sshuttled_src} ${common_src})
 set_property(TARGET sshuttled PROPERTY C_STANDARD 11)
 target_include_directories(sshuttled PRIVATE include/)
 
@@ -38,14 +41,9 @@ install(TARGETS sshuttled
 
 file(GLOB_RECURSE sshuttlectl_src
   "src/sshuttlectl.c"
-  "src/daemonize.c"
-  "src/log.c"
-  "src/pid.c"
-  "src/dirs.c"
-  "src/fifo.c"
 )
 
-add_executable(sshuttlectl ${sshuttlectl_src})
+add_executable(sshuttlectl ${sshuttlectl_src} ${common_src})
 set_property(TARGET sshuttlectl PROPERTY C_STANDARD 11)
 target_include_directories(sshuttlectl PRIVATE include/)
 

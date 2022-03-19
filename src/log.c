@@ -84,6 +84,20 @@ void log_message(int priority, const char* fmt, ...) {
 
   va_list args;
 
+  va_start(args, fmt);
+  log_message_logfile_v(priority, fmt, args);
+  va_end(args);
+
+  va_start(args, fmt);
+  log_message_syslog_v(priority, fmt, args);
+  va_end(args);
+
+  if (priority < LOG_WARNING) {  // TODO: does this belong here?
+    exit(EXIT_FAILURE);
+  }
+}
+
+void log_message_logfile_v(int priority, const char* fmt, va_list args) {
   if (is_logfile_open && log_stream != NULL) {
     if (strcmp(log_filename, "(stdout)") == 0) {
       fprintf(log_stream, "[%s] ", log_priority_readable[priority]);
@@ -101,20 +115,27 @@ void log_message(int priority, const char* fmt, ...) {
       fprintf(log_stream, "[%s] [%s] [%s] ", date_string, time_string, log_priority_readable[priority]);
     }
 
-    va_start(args, fmt);
     vfprintf(log_stream, fmt, args);
-    va_end(args);
-
     fprintf(log_stream, "\n");
   }
+}
 
+void log_message_syslog_v(int priority, const char* fmt, va_list args) {
   if (is_syslog_open) {
-    va_start(args, fmt);  // Must call va_start once again because the call to vfprintf "consumes" the pointer
     vsyslog(priority, fmt, args);
-    va_end(args);
   }
+}
 
-  if (priority < LOG_WARNING) {  // TODO: does this belong here?
-    exit(EXIT_FAILURE);
-  }
+void log_message_logfile(int priority, const char* fmt, ...) {
+  va_list args;
+  va_start(args, fmt);
+  log_message_logfile_v(priority, fmt, args);
+  va_end(args);
+}
+
+void log_message_syslog(int priority, const char* fmt, ...) {
+  va_list args;
+  va_start(args, fmt);
+  log_message_syslog_v(priority, fmt, args);
+  va_end(args);
 }
