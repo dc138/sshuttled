@@ -10,9 +10,8 @@
 #include <getopt.h>
 #include <string.h>
 
-int running = 0;
-int delay   = 1;
-int counter = 0;
+bool running = true;
+int  counter = 0;
 
 const char* app_name = NULL;
 
@@ -26,7 +25,7 @@ void handle_signal(int sig) {
   if (sig == SIGINT || sig == SIGTERM) {
     log_message(LOG_INFO, "Received termination signal");
 
-    running = 0;
+    running = false;
     signal(sig, SIG_DFL);
 
     pid_delete();
@@ -99,13 +98,13 @@ int main(int argc, char* argv[]) {
   signal(SIGINT, handle_signal);
   signal(SIGTERM, handle_signal);
 
-  running = 1;
+  running = true;
 
-  while (running == 1) {
+  while (running) {
     log_message(LOG_DEBUG, "%d", counter++);
     log_flush();
 
-    sleep(delay);
+    sleep(1);
   }
 
   log_close_logfile();
