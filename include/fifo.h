@@ -9,6 +9,7 @@ typedef struct {
 } fifo_t;
 
 void fifo_create(fifo_t* fifo, const char* filepath);
+void fifo_create_existing(fifo_t* fifo, const char* filepath);
 void fifo_delete(fifo_t* fifo);
 
 bool fifo_read(fifo_t* fifo, void* buffer, int bytes);
