@@ -15,12 +15,12 @@ void fifo_create(fifo_t* fifo, const char* filepath) {
   assert(!fifo->open && "Fifo must not be open");
 
   if (mkfifo(filepath, 0666) == -1) {
-    log_message(LOG_ERR, "Error while trying to create fifo %s, %s", filepath, strerror(errno));
-
     if (errno == EEXIST) {
       fifo_create_existing(fifo, filepath);
       return;
     }
+
+    log_message(LOG_ERR, "Error while trying to create fifo %s, %s", filepath, strerror(errno));
   }
 
   log_message(LOG_INFO, "Created fifo %s", filepath);
