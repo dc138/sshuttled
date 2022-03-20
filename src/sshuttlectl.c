@@ -33,7 +33,7 @@ int main(int argc, char* argv[]) {
     return EXIT_FAILURE;
   }
 
-  fifo_create_existing(&server_fifo, "/var/run/sshuttled/in");
+  fifo_create_existing(&server_fifo, "/var/run/sshuttled/commands");
 
   log_close_logfile();
   return EXIT_SUCCESS;

@@ -59,6 +59,7 @@ void log_open_logfile(const char* filename) {
 void log_close_syslog() {
   assert(is_syslog_open == true && "Syslog must be open");
 
+  log_message(LOG_INFO, "Closing syslog");
   closelog();
   is_syslog_open = false;
 }

@@ -17,8 +17,7 @@ int  counter = 0;
 const char* app_name    = NULL;
 const char* app_version = "0.1.0";
 
-static fifo_t fifo_in;
-static fifo_t fifo_out;
+static fifo_t command_fifo;
 
 void print_help(void) {
   printf("\n Usage: %s [OPTIONS]\n\n", app_name);
@@ -30,10 +29,9 @@ void print_help(void) {
 
 void terminate(int code) {
   log_message(LOG_NOTICE, "Exiting sshuttled");
-  pid_delete();
 
-  fifo_delete(&fifo_in);
-  fifo_delete(&fifo_out);
+  pid_delete();
+  fifo_delete(&command_fifo);
 
   log_close_logfile();
   log_close_syslog();
@@ -107,8 +105,7 @@ int main(int argc, char* argv[]) {
   log_message(LOG_NOTICE, "Starting sshuttle daemon version %s", app_version);
 
   pid_create("/var/run/sshuttled/pid");
-  fifo_create(&fifo_in, "/var/run/sshuttled/in");
-  fifo_create(&fifo_out, "/var/run/sshuttled/out");
+  fifo_create(&command_fifo, "/var/run/sshuttled/commands");
 
   signal(SIGINT, handle_signal);
   signal(SIGTERM, handle_signal);
@@ -117,7 +114,7 @@ int main(int argc, char* argv[]) {
   char command[512] = {0};
 
   while (running) {
-    if (fifo_read_line(&fifo_in, (char*)command, 512)) {
+    if (fifo_read_line(&command_fifo, (char*)command, 512)) {
       log_message(LOG_DEBUG, "Read %s from fifo", command);
     }
 
