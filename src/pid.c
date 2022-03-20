@@ -31,21 +31,25 @@ void pid_create(const char* filename) {
     sprintf(str, "%d\n", getpid());
     write(pid_fd, str, strlen(str));
 
+    log_message(LOG_INFO, "Created pid file %s", filename);
     is_pid_created = true;
   }
 }
 
 void pid_delete() {
-  if (pid_fd != -1) {
-    lockf(pid_fd, F_ULOCK, 0);
-    close(pid_fd);
-  }
+  if (is_pid_created && pid_filename != NULL) {
+    if (pid_fd != -1) {
+      lockf(pid_fd, F_ULOCK, 0);
+      close(pid_fd);
+    }
 
-  if (pid_filename != NULL) {
-    unlink(pid_filename);
-  }
+    if (pid_filename != NULL) {
+      unlink(pid_filename);
+    }
 
-  is_pid_created = false;
+    log_message(LOG_INFO, "Deleted pid file %s", pid_filename);
+    is_pid_created = false;
+  }
 }
 
 bool pid_is_program_open(const char* filename) {

@@ -29,7 +29,7 @@ void print_help(void) {
 }
 
 void terminate(int code) {
-  log_message(LOG_INFO, "Exiting sshuttled");
+  log_message(LOG_NOTICE, "Exiting sshuttled");
   pid_delete();
 
   fifo_delete(&fifo_in);
@@ -104,10 +104,9 @@ int main(int argc, char* argv[]) {
   dirs_create("/var/run/sshuttled", 0777);
   dirs_create("/var/log/sshuttled", 0777);
 
+  log_message(LOG_NOTICE, "Starting sshuttle daemon version %s", app_version);
+
   pid_create("/var/run/sshuttled/pid");
-
-  log_message(LOG_INFO, "Starting sshuttle daemon version %s", app_version);
-
   fifo_create(&fifo_in, "/var/run/sshuttled/in");
   fifo_create(&fifo_out, "/var/run/sshuttled/out");
 
