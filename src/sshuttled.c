@@ -118,7 +118,7 @@ int main(int argc, char* argv[]) {
   char command[512] = {0};
 
   while (running) {
-    if (fifo_read(&fifo_in, (char*)command, 512)) {
+    if (fifo_read_line(&fifo_in, (char*)command, 512)) {
       log_message(LOG_DEBUG, "Read %s from fifo", command);
     }
 

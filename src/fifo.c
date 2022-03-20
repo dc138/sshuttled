@@ -53,21 +53,24 @@ void fifo_delete(fifo_t* fifo) {
   fifo->filepath = NULL;
 }
 
-bool fifo_read(fifo_t* fifo, void* buffer, int bytes) {
+bool fifo_read_line(fifo_t* fifo, char* buffer, int bytes) {
   assert(fifo->open && "Fifo must be open");
-  int fd = open(fifo->filepath, O_RDONLY);
+  FILE* file = fopen(fifo->filepath, "r");
 
-  if (fd < 0) {
+  if (file == NULL) {
     log_message(LOG_ERR, "Cannot open fifo %s for reading", fifo->filepath);
   }
 
-  int res = read(fd, buffer, bytes);
-  close(fd);
+  if (fgets(buffer, bytes, file)) {
+    char* eol = strchr(buffer, '\n');
+    if (eol) *eol = '\0';
+  }
 
-  return res == 0 ? false : true;
+  fclose(file);
+  return strlen(buffer) == 0 ? false : true;
 }
 
-void fifo_write(fifo_t* fifo, const char* text) {
+void fifo_write_line(fifo_t* fifo, const char* text) {
   assert(fifo->open && "Fifo must be open");
   int fd = open(fifo->filepath, O_WRONLY);
 
