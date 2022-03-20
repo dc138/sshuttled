@@ -23,9 +23,10 @@ void log_open_syslog(const char* identifier) {
   assert(is_syslog_open == false && "Syslog must not be open");
 
   log_identifier = identifier;
+  is_syslog_open = true;
 
   openlog(identifier, LOG_PID | LOG_CONS, LOG_DAEMON);
-  is_syslog_open = true;
+  log_message(LOG_INFO, "Opened syslog");
 }
 
 void log_open_logfile(const char* filename) {

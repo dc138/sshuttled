@@ -41,7 +41,7 @@ void daemonize() {
 
   umask(0);
 
-  // chdir("/");
+  chdir("/");
 
   for (fd = sysconf(_SC_OPEN_MAX); fd > 0; fd--) {
     close(fd);

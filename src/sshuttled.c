@@ -93,21 +93,20 @@ int main(int argc, char* argv[]) {
     return EXIT_FAILURE;
   }
 
+  if (start_daemonized) {
+    printf("Forking to background...\n");
+    daemonize();
+  }
+
   log_open_syslog(app_name);
-  log_message(LOG_INFO, "Starting sshuttle daemon version %s", app_version);
+  log_open_logfile(start_daemonized ? "/var/log/sshuttled/log.txt" : NULL);
 
   dirs_create("/var/run/sshuttled", 0777);
   dirs_create("/var/log/sshuttled", 0777);
 
-  if (start_daemonized) {
-    printf("Forking to background...\n");
+  pid_create("/var/run/sshuttled/pid");
 
-    daemonize();
-    pid_create("/var/run/sshuttled/pid");
-  }
-
-  chroot("/var/run/sshuttled");
-  log_open_logfile(start_daemonized ? "/var/log/sshuttled/log.txt" : NULL);
+  log_message(LOG_INFO, "Starting sshuttle daemon version %s", app_version);
 
   fifo_create(&fifo_in, "/var/run/sshuttled/in");
   fifo_create(&fifo_out, "/var/run/sshuttled/out");

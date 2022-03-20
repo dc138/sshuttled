@@ -20,11 +20,11 @@ void pid_create(const char* filename) {
     pid_fd = open(pid_filename, O_RDWR | O_CREAT, 0640);
 
     if (pid_fd < 0) {
-      log_message(LOG_ERR, "Cannot write pid file %s", pid_filename);
+      log_message(LOG_ERR, "Cannot open() pid file %s, error: %s", pid_filename, strerror(errno));
     }
 
     if (lockf(pid_fd, F_TLOCK, 0) < 0) {
-      log_message(LOG_ERR, "Cannot lock pid file %s", pid_filename);
+      log_message(LOG_ERR, "Cannot lock() pid file %s, error: %s", pid_filename, strerror(errno));
     }
 
     char str[256];
