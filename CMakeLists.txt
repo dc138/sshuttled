@@ -88,5 +88,5 @@ function(install_conf src dest)
 endfunction(install_conf)
 
 install_conf(./config/sshutled.json ${SSHUTTLED_CONF_DIR})
-install_conf(./systemd/sshuttle.service ${SYSTEMD_UNIT_DIR})
+install_conf(./systemd/sshuttled.service ${SYSTEMD_UNIT_DIR})
 

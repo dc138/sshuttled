@@ -1,16 +1,11 @@
 [Unit]
-Description=Example of forking daemon program
+Description=sshuttle daemon
 
 [Service]
 Type=forking
-PIDFile=/run/daemon/daemon.pid
-ExecStart=/usr/bin/daemon \
-	--conf_file /etc/daemon/daemon.conf \
-	--log_file /var/log/daemon/daemon.log \
-	--pid_file /run/daemon/daemon.pid \
-	--daemon
-User=daemoner
-ExecReload=/bin/kill -HUP $MAINPID
+PIDFile=/var/run/sshuttled/pid
+ExecStart=/usr/local/bin/sshuttled
+User=sshuttled
 
 [Install]
 WantedBy=multi-user.target
